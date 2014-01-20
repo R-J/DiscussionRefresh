@@ -10,6 +10,7 @@ $('a.PreviewButton').click(function() {
    // $('a.PreviewButton').parents('div.Comment').find('div.Meta span:last').after('<span class="TinyProgress">&#160;</span>');
 
    var action = '/plugin/discussionrefresh/' + '/' + discussionID + '/' + lastCommentID;
+// $Sender->DeliveryType=VIEW&DeliveryMethod=JSON   
    alert(action); 
          $.ajax({
          url: action,
