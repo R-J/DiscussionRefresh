@@ -1,8 +1,6 @@
 $(document).ready(function(){
     $('.CommentButton, a.PreviewButton, a.WriteButton, a.DraftButton').livequery('click', function() {
         var discussionID = document.getElementById('Form_DiscussionID').getAttribute('value');
-        var commentID = document.getElementById('Form_CommentID').getAttribute('value'); // nur bei edit
-
         var elLastCommentID = document.getElementById('LastCommentID');
         var lastCommentID = elLastCommentID.getAttribute('value');
 
