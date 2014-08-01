@@ -1,11 +1,29 @@
 $(document).ready(function(){
     $('.CommentButton, a.PreviewButton, a.WriteButton, a.DraftButton').livequery('click', function() {
-        var discussionID = document.getElementById('Form_DiscussionID').getAttribute('value');
+        // Get LastCommentID
         var elLastCommentID = document.getElementById('LastCommentID');
-        var lastCommentID = elLastCommentID.getAttribute('value');
+        if (elLastCommentID) {
+            var lastCommentID = elLastCommentID.getAttribute('value');
+        } else {
+            // if it is not there, there are already more pages to display on screen => return
+            return;
+        }
+
+        var discussionID = document.getElementById('Form_DiscussionID').getAttribute('value');
+
+        // Get page number from canonical link
+        var canonicalLink = document.querySelector("link[rel='canonical']").getAttribute("href");
+        var patt = /.*\/p(\d+)$/;
+        var pageCount = patt.exec(canonicalLink);
+        if (pageCount) {
+            var page = pageCount[1];
+        } else {
+            // if there is none, assume we are on page 1
+            page = 1;
+        }
 
         $.ajax({
-            url: gdn.url('/discussion/discussionrefresh/' + discussionID + '/' + lastCommentID),
+            url: gdn.url('/discussion/discussionrefresh/' + discussionID + '/' + lastCommentID + '/' + page),
             dataType: 'json',
             cache: false,
             success: function(comments){
