@@ -1,9 +1,9 @@
-<?php defined('APPLICATION') or die();
+<?php defined('APPLICATION') or die('This script should not be accessed directly');
 
 $PluginInfo['DiscussionRefresh'] = array(
     'Name' => 'Discussion Refresh',
     'Description' => 'Loads new comments when either "Preview", "Edit", "Save Draft" or "Post Comment" button is pressed.',
-    'Version' => '0.1',
+    'Version' => '0.2',
     'RequiredApplications' => array('Vanilla' => '2.1'),
     'MobileFriendly' => true,
     'Author' => 'Robin Jurinka',
@@ -38,8 +38,13 @@ class DiscussionRefreshPlugin extends Gdn_Plugin {
      * @since 0.1
      */
     public function discussionController_discussionRefresh_create($Sender, $Args) {
-        $DiscussionID = $Args[0] + 0;
-        $LastCommentID = $Args[1] + 0;
+        $DiscussionID = (int)$Args[0];
+        $LastCommentID = (int)$Args[1];
+        $Page = (int)$Args[2];
+
+        if ($DiscussionID <= 0 || $LastCommentID < 0 || $Page < 1) {
+            return;
+        }
 
         // don't forget permission check!
         $DiscussionModel = new DiscussionModel();
@@ -57,11 +62,31 @@ class DiscussionRefreshPlugin extends Gdn_Plugin {
         $Session = Gdn::Session();
         // include view for comments
         include_once(Gdn::Controller()->FetchViewLocation('helper_functions', 'Discussion', 'Vanilla'));
+
         $CommentModel = new CommentModel();
-        $Comments = $CommentModel->Get($DiscussionID);
+
+        if (Gdn::Cache()->Type() != 'ct_null') {
+            // if forum is using a cache get comments page by page with PageWhere
+            $Limit = Gdn::Config('Vanilla.Comments.PerPage', 30);
+            list($Offset, $Limit) = OffsetLimit($Page, $Limit);
+
+            $Comments = array();
+            do {
+                // Get only "one page" of comments because that is being cached
+                $PageComments = $CommentModel->Get($DiscussionID, $Limit, $Offset)->ResultArray();
+                if ($PageComments) {
+                    // add that up to one single array
+                    $Comments = array_merge($Comments, $PageComments);
+                }
+                $Offset += $Limit;
+            } while (count($PageComments) == $Limit);
+        } else {
+            // no cache, so fetch all
+            $Comments = $CommentModel->Get($DiscussionID)->ResultArray();
+        }
 
         foreach ($Comments as $Comment) {
-            $CommentID = $Comment->CommentID;
+            $CommentID = $Comment['CommentID'];
             ++$ItemCount;
             if ($CommentID > $LastCommentID) {
                 ob_start();
